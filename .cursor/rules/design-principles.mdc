@@ -1,0 +1,61 @@
+---
+description: "Design principles for source changes, with explicit tie-breakers"
+globs: "src/**/*.ts,src/**/*.tsx,packages/**/*.ts,packages/**/*.tsx"
+alwaysApply: false
+---
+
+# Design principles
+
+These conflict with each other. When they do, the ranking below decides.
+Do not pick the principle that justifies more code.
+
+## Ranking (higher wins)
+
+1. **YAGNI beats DRY.** Two similar things are not duplication. Wait for the
+   third. Never add a parameter, flag, or config option for a case that does
+   not exist yet.
+2. **Simple beats clever.** If explaining it in a PR comment takes more than
+   two sentences, it is too clever. Prefer the boring version.
+3. **Fail fast beats defensive defaults.** Do not swallow errors. Do not
+   invent fallback values that hide missing data — a wrong number displayed
+   confidently is worse than an error state. Validate at the boundary.
+4. **Focused diff beats tidiness.** See the Boy Scout cap below.
+
+## Applied
+
+**KISS** — solve the acceptance criteria and nothing else. No extension points
+"for later."
+
+**DRY** — extract on the third occurrence, not the second. Extract behaviour,
+never just shape: two functions that look alike but change for different
+reasons are not duplicates.
+
+**YAGNI** — no abstraction without two real callers today. No configuration
+without a second real configuration.
+
+**Separation of concerns** — respect `app/ → features/ → shared/ → packages/`.
+Data fetching in hooks, presentation in components, business rules in one
+place. See `docs/architecture/components.md`.
+
+**Law of Demeter** — do not reach through objects (`a.b.c.d`). Ask for what
+you need, not for the thing that has it.
+
+**Fail fast** — validate at the fetch boundary with Zod (see the
+`zod-validation` rule). Throw or surface an error state; do not default to
+zero, empty, or "unknown" unless the spec says so.
+
+**Boy Scout Rule — CAPPED.** Improve only code you had to touch for this
+ticket. Do not refactor adjacent code. Anything you notice but do not fix goes
+in the PR description or as `TODO(backlog): ...` per AGENTS.md — not into this
+diff. A larger diff gets a worse review, so tidiness that grows the diff is a
+net loss.
+
+## Before you finish
+
+Ask yourself, and answer honestly if the answer is no:
+- Did I add an abstraction with only one caller?
+- Did I add a parameter no current caller passes?
+- Did I change files this ticket did not require?
+- Did I hide a failure behind a default value?
+
+If yes to any, undo it.
