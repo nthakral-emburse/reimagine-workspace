@@ -1,0 +1,6 @@
+# The cloned repos are managed by mani, not tracked here.
+repos/
+
+# macOS and Obsidian noise
+.DS_Store
+.obsidian/

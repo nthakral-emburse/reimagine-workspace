@@ -1,12 +1,12 @@
 {
-    "version": 1,
-    "hooks": {
-      "preToolUse": [
-        {
-          "command": "python3 tools/hooks/deny_legacy_writes.py",
-          "matcher": "Write|Delete",
-          "failClosed": true
-        }
-      ]
-    }
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "python3 tools/hooks/deny_legacy_writes.py",
+        "matcher": "Write|Delete|StrReplace|MultiEdit|Edit|EditNotebook|Shell",
+        "failClosed": true
+      }
+    ]
   }
+}
