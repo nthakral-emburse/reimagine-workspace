@@ -132,7 +132,24 @@ reimagine-workspace/
 
 ## AI agent skills
 
-This workspace ships three Cursor agent skills that encode the full design-to-contract workflow. You invoke them by typing the skill name in the Cursor chat.
+This workspace ships four Cursor agent skills that encode the full feature-planning-to-contract workflow. You invoke them by typing the skill name in the Cursor chat.
+
+### `/epic-create` — Feature request → proposed Epics
+
+**When to use:** at the very start, when you have a feature idea or a Confluence doc but no Epics yet.
+
+Give it a plain-language feature request or a Confluence page URL. It checks the [MER-73162 initiative](https://emburse.atlassian.net/browse/MER-73162) for duplicates, reads the codebase, dispatches a `legacy-reader` subagent for classic behavior, and writes a proposed set of Epics to `notes/epic-draft-<slug>/proposal.md`. Nothing is created in Jira until you explicitly approve.
+
+Each proposed Epic includes:
+- Background (what's missing and why it matters)
+- Scope — including explicit call-outs for out-of-scope items
+- Permissions and customer configuration gating
+- Testable acceptance criteria (with accessibility and i18n requirements built in)
+- Risks, dependencies, and a short technical note
+
+After approval it creates the Epics in Jira under MER-73162 with the `reimagine` label, adds dependency links, and verifies every created issue.
+
+---
 
 ### `/refine` — Epic → design document + ticket split
 
@@ -198,10 +215,16 @@ It stops before opening the PR — that is a human step. Merge the contract PR b
 ### Skill order of operations
 
 ```
-Epic arrives
+Feature idea or Confluence doc
     │
     ▼
-/refine <epic-key>          Read code, write refine.md, propose ticket split
+/epic-create <request>      Check for duplicates, read code, propose Epics → notes/epic-draft-<slug>/proposal.md
+    │  (you approve)
+    ▼
+Epics created in Jira under MER-73162
+    │
+    ▼
+/refine <epic-key>          Read code, write refine.md, propose ticket split → notes/<epic-id>/refine.md
     │  (you approve)
     ▼
 /contract <epic-id>         Translate contract → OpenAPI YAML, lint, stop
