@@ -6,7 +6,7 @@ specs:
   fast:
     output: table
     parallel: true
-    forks: 20
+    forks: 12
     ignore_errors: true
     ignore_non_existing: true
 
@@ -114,6 +114,10 @@ projects:
     tags: [legacy, unknown]
     single_branch: true
     clone: git clone --depth 1 --single-branch git@github.com:Chrome-River/ansible.git repos/legacy/ansible
+  api-contracts:
+    path: repos/new/api-contracts
+    url: git@github.com:nthakral-emburse/api-contracts.git
+    tags: [new]
   apollo:
     path: repos/legacy/apollo
     url: git@github.com:Chrome-River/Apollo.git
@@ -1274,6 +1278,14 @@ projects:
     tags: [legacy, unknown]
     single_branch: true
     clone: git clone --depth 1 --single-branch git@github.com:Chrome-River/push-notification.git repos/legacy/push-notification
+  qa-automation:
+    path: repos/new/qa-automation
+    url: git@github.com:Chrome-River/qa-automation.git
+    tags: [new]
+  qa-enterprise:
+    path: repos/new/qa-enterprise
+    url: git@github.com:Chrome-River/qa-enterprise.git
+    tags: [new]
   queue-client:
     path: repos/legacy/queue-client
     url: git@github.com:Chrome-River/queue-client.git
@@ -1367,9 +1379,9 @@ projects:
   rules-regulator:
     path: repos/legacy/rules-regulator
     url: git@github.com:Chrome-River/rules-regulator.git
-    tags: [legacy, unknown]
+    tags: [legacy, core]
     single_branch: true
-    clone: git clone --depth 1 --single-branch git@github.com:Chrome-River/rules-regulator.git repos/legacy/rules-regulator
+    clone: git clone --single-branch git@github.com:Chrome-River/rules-regulator.git repos/legacy/rules-regulator
   search7:
     path: repos/legacy/search7
     url: git@github.com:Chrome-River/search7.git

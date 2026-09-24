@@ -13,6 +13,7 @@ analytics                            git@github.com:Chrome-River/analytics.git  
 analytics-reporting                  git@github.com:Chrome-River/analytics-reporting.git                  unknown
 analytics-sync                       git@github.com:Chrome-River/analytics-sync.git                       unknown
 ansible                              git@github.com:Chrome-River/ansible.git                              unknown
+api-contracts                        git@github.com:nthakral-emburse/api-contracts.git                    new
 apollo                               git@github.com:Chrome-River/Apollo.git                               core
 approval-notifier                    git@github.com:Chrome-River/approval-notifier.git                    unknown
 as-artifactory-automation            git@github.com:Chrome-River/as-artifactory-automation.git            unknown
@@ -207,6 +208,8 @@ prism                                git@github.com:Chrome-River/prism.git      
 props                                git@github.com:Chrome-River/props.git                                unknown
 pt-automation                        git@github.com:Chrome-River/pt-automation.git                        unknown
 push-notification                    git@github.com:Chrome-River/push-notification.git                    unknown
+qa-automation                        git@github.com:Chrome-River/qa-automation.git                        new
+qa-enterprise                        git@github.com:Chrome-River/qa-enterprise.git                        new
 queue-client                         git@github.com:Chrome-River/queue-client.git                         unknown
 rate                                 git@github.com:Chrome-River/rate.git                                 unknown
 receipt-translate                    git@github.com:Chrome-River/receipt-translate.git                    unknown
