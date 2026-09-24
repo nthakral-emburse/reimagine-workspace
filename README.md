@@ -130,6 +130,93 @@ reimagine-workspace/
 
 ---
 
+## AI agent skills
+
+This workspace ships three Cursor agent skills that encode the full design-to-contract workflow. You invoke them by typing the skill name in the Cursor chat.
+
+### `/refine` — Epic → design document + ticket split
+
+**When to use:** at the start of a new Epic, before any tickets exist.
+
+Give it a Jira Epic key. It reads the code across every repo the Epic touches, writes a single planning document at `notes/<epic-id>/refine.md`, and proposes a ticket-per-repo split for your review. Nothing is created in Jira until you explicitly approve the split.
+
+The document it produces includes:
+- A plain-language summary (no jargon)
+- A survey of every repo touched, with file citations
+- The API contract — written once so every repo builds against the same shape
+- A numbered ticket table with acceptance criteria, dependencies, and size estimates
+- Permissions, screen-context, and accessibility notes for every frontend ticket
+
+Workflow after `/refine`:
+
+```
+/refine <epic-key>          → notes/<epic-id>/refine.md
+    you approve the split
+/contract <epic-id>         → OpenAPI PR in api-contracts  (merge this first)
+/propose <ticket-key>       → per-ticket proposal in each repo
+```
+
+---
+
+### `/propose` — Ticket → detailed proposal
+
+**When to use:** after the contract PR is merged, before implementation starts on any individual Story.
+
+Give it a Jira ticket key (or plain-language description). It reads the code in every repo the ticket touches and writes `notes/<scope-id>/proposal.md` — a reviewable, implementation-ready design for that one ticket.
+
+The proposal includes:
+- A plain summary (readable by anyone, not just engineers)
+- A survey of what exists today in each surface, with file paths
+- Shared decisions (response shapes, status codes, who owns user-facing text)
+- A full API contract with JSON examples, field tables, and enum types, when the ticket touches an endpoint
+- Risks and open questions
+
+The proposal is approved when a person says so — never automatically. After approval, run `/contract` if the ticket changes an endpoint, then implement.
+
+---
+
+### `/contract` — Approved proposal → OpenAPI YAML
+
+**When to use:** after `/refine` or `/propose` is approved and before any implementation starts.
+
+Give it the note ID (e.g. `/contract mer-83653-memorize-line-item`). It reads the **Contract** section of the approved document, translates it into valid OpenAPI 3.1.0 YAML, and appends it to the correct domain file in `repos/new/api-contracts/contracts/web-aggregator/`. It then runs `npx spectral lint` and fixes any errors.
+
+Domain file routing:
+
+| Endpoint prefix | File |
+|-----------------|------|
+| `/v1/expense-reports/…` | `expense-reports.yaml` |
+| `/v1/ewallet/…` | `ewallet.yaml` |
+| `/v1/forms/…`, `/v1/expense-types`, `/v1/mosaics` | `forms.yaml` |
+| `/v1/expense-transactions/…` | `expense-transactions.yaml` |
+| `/v1/users/…`, `/v1/authorization/…`, `/v1/navigation/…` | `session.yaml` |
+
+It stops before opening the PR — that is a human step. Merge the contract PR before starting any implementation.
+
+---
+
+### Skill order of operations
+
+```
+Epic arrives
+    │
+    ▼
+/refine <epic-key>          Read code, write refine.md, propose ticket split
+    │  (you approve)
+    ▼
+/contract <epic-id>         Translate contract → OpenAPI YAML, lint, stop
+    │  (you open + merge PR in api-contracts)
+    ▼
+/propose <ticket-key>       Per-ticket deep survey + proposal (backend & frontend in parallel)
+    │  (you approve)
+    ▼
+implement                   Done inside each individual repo
+```
+
+The skills never write product code, never create Jira issues automatically, and never push or open PRs. Every gate is a human decision.
+
+---
+
 ## Adding or updating a repo
 
 `mani.yaml` is **generated** — do not edit it by hand. Instead:
