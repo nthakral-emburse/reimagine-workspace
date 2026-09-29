@@ -4,3 +4,6 @@ repos/
 # macOS and Obsidian noise
 .DS_Store
 .obsidian/
+
+# Personal Claude Code settings
+.claude/settings.local.json
