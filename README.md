@@ -8,6 +8,7 @@ It does **not** contain application code. Instead it holds:
 - **`notes/`** — per-ticket proposals, refinements, and survey findings
 - **`tools/`** — scripts for generating the manifest and enforcing read-only guards on legacy repos
 - **`.cursor/`** — AI agent rules, skills, and hooks for this workspace
+- **`CLAUDE.md`, `.claude/`** — the same setup for Claude Code. Skills are linked from `.cursor/`. The rules and the `legacy-reader` agent are copies (Claude Code can't read `.mdc`), so when you edit one in `.cursor/`, update the copy listed in `CLAUDE.md`.
 
 Cloned repos live under `repos/` (git-ignored; managed by mani).
 
@@ -132,7 +133,7 @@ reimagine-workspace/
 
 ## AI agent skills
 
-This workspace ships four Cursor agent skills that encode the full feature-planning-to-contract workflow. You invoke them by typing the skill name in the Cursor chat.
+This workspace ships four agent skills that encode the full feature-planning-to-contract workflow. They work in both Cursor and Claude Code: type the skill name in the Cursor chat or at the Claude Code prompt. Edit them in `.cursor/skills/`; `.claude/skills/` only links there.
 
 ### `/epic-create` — Feature request → proposed Epics
 
@@ -255,4 +256,4 @@ The skills never write product code, never create Jira issues automatically, and
 
 ## Legacy repos are read-only
 
-Everything under `repos/legacy/` is read-only by convention and enforced by a git hook. If you need to document a finding about legacy behaviour, write it to `notes/<feature>/findings.md` instead. Changes to legacy code are out of scope until a later phase.
+Everything under `repos/legacy/` is read-only by convention. Three things enforce it: the agent hook `tools/hooks/deny_legacy_writes.py` (wired into both `.cursor/hooks.json` and `.claude/settings.json`), a Claude Code `permissions.deny` rule, and the disabled push URLs from `mani run lock-readonly`. Run `python3 tools/hooks/test_deny_legacy_writes.py` after changing the hook. If you need to document a finding about legacy behaviour, write it to `notes/<feature>/findings.md` instead. Changes to legacy code are out of scope until a later phase.

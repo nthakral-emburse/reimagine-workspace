@@ -7,6 +7,10 @@ Two things get checked:
 
 Reads are always allowed. This is a speed bump, not a sandbox: the disabled
 git push URLs (`mani run lock-readonly`) are the real backstop.
+
+Runs for Cursor (.cursor/hooks.json) and, with --claude, for Claude Code
+(.claude/settings.json). The flag picks the response format; Cursor also sets
+CLAUDE_PROJECT_DIR, so the environment cannot tell the two apart.
 """
 
 import json
@@ -14,8 +18,10 @@ import os
 import re
 import sys
 
-ROOT = os.environ.get("CURSOR_PROJECT_ROOT") or os.getcwd()
+ROOT = (os.environ.get("CURSOR_PROJECT_ROOT") or os.environ.get("CLAUDE_PROJECT_DIR")
+        or os.getcwd())
 LEGACY = os.path.realpath(os.path.join(ROOT, "repos", "legacy")) + os.sep
+CLAUDE = "--claude" in sys.argv[1:]
 
 PATH_KEYS = ("path", "file_path", "target_file", "notebook_path", "destination")
 
@@ -38,29 +44,43 @@ INTERPRETER_WRITE = re.compile(r"open\([^)]*repos/legacy[^)]*['\"][wa]")
 
 
 def respond_allow():
-    print(json.dumps({"permission": "allow"}))
+    # Claude Code: say nothing, so its normal permission prompts still apply.
+    # Answering "allow" there would skip them.
+    if not CLAUDE:
+        print(json.dumps({"permission": "allow"}))
     sys.exit(0)
 
 
 def respond_deny(what, why):
-    print(json.dumps({
-        "permission": "deny",
-        "user_message": f"Blocked: {what} is legacy (read-only until Phase 2).",
-        "agent_message": (
-            "mercury, apollo, and the backend services are read-only. " + why +
-            " Record what needs to change in notes/<feature>/findings.md as a "
-            "finding with a decision. Do not try another route."
-        ),
-    }))
+    user_message = f"Blocked: {what} is legacy (read-only until Phase 2)."
+    agent_message = (
+        "mercury, apollo, and the backend services are read-only. " + why +
+        " Record what needs to change in notes/<feature>/findings.md as a "
+        "finding with a decision. Do not try another route."
+    )
+    if CLAUDE:
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": f"{user_message} {agent_message}",
+            },
+        }))
+    else:
+        print(json.dumps({
+            "permission": "deny",
+            "user_message": user_message,
+            "agent_message": agent_message,
+        }))
     sys.exit(0)
 
 
-def is_legacy_path(candidate):
+def is_legacy_path(candidate, base=ROOT):
     """True if candidate resolves to repos/legacy or anything inside it."""
     if not candidate:
         return False
     cleaned = candidate.strip().strip("'\"")
-    full = os.path.realpath(os.path.join(ROOT, cleaned))
+    full = os.path.realpath(os.path.join(base, cleaned))
     return (full + os.sep).startswith(LEGACY)
 
 
@@ -78,11 +98,15 @@ def main():
         if is_legacy_path(candidate):
             respond_deny(candidate, "Direct file write to legacy.")
 
-    # 2. Shell commands.
+    # 2. Shell commands. Claude Code's shell keeps its directory between calls
+    # and reports it as the top-level "cwd".
     command = tool_input.get("command") or ""
     if command:
+        working_dir = tool_input.get("working_directory") or payload.get("cwd") or ""
+        shell_dir = os.path.join(ROOT, working_dir)
+
         for target in REDIRECT.findall(command):
-            if is_legacy_path(target):
+            if is_legacy_path(target, shell_dir):
                 respond_deny(target, "Shell output redirected into legacy.")
 
         if MUTATES_LEGACY.search(command):
@@ -91,7 +115,6 @@ def main():
         if INTERPRETER_WRITE.search(command):
             respond_deny("a legacy path in this script", f"Command was: {command[:160]}")
 
-        working_dir = tool_input.get("working_directory") or ""
         inside_legacy = is_legacy_path(working_dir) or CD_LEGACY.search(command)
         if inside_legacy and ANY_MUTATOR.search(command):
             respond_deny("the legacy directory", f"Mutating command run inside legacy: {command[:160]}")
@@ -100,4 +123,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Claude Code lets the tool call through if a hook crashes, so a crash
+    # has to deny here. (Cursor gets the same from failClosed.)
+    try:
+        main()
+    except Exception:
+        respond_deny("this tool call", "The guard crashed while checking it.")
