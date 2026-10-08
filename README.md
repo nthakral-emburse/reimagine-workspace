@@ -133,7 +133,7 @@ reimagine-workspace/
 
 ## AI agent skills
 
-This workspace ships four agent skills that encode the full feature-planning-to-contract workflow. They work in both Cursor and Claude Code: type the skill name in the Cursor chat or at the Claude Code prompt. Edit them in `.cursor/skills/`; `.claude/skills/` only links there.
+This workspace ships five agent skills. Four cover the feature-planning-to-contract workflow, and `/triage` covers bugs. They work in both Cursor and Claude Code: type the skill name in the Cursor chat or at the Claude Code prompt. Edit them in `.cursor/skills/`; `.claude/skills/` only links there.
 
 ### `/epic-create` — Feature request → proposed Epics
 
@@ -213,6 +213,24 @@ It stops before opening the PR — that is a human step. Merge the contract PR b
 
 ---
 
+### `/triage` — Bug → root cause + fix plan
+
+**When to use:** for a bug ticket. A bug has no Epic and usually no contract, so it skips `/refine` and `/contract`.
+
+Give it a Jira bug key (or a plain-language description). It traces the request through every layer it passes: enterprise-web, the aggregator, and Apollo and mercury through `legacy-reader`. It finds the root cause from the code, not from the ticket's guess. It writes `notes/<scope-id>/triage.md`, plus `findings.md` when legacy behaviour is part of the cause.
+
+The triage document includes:
+- A plain summary (readable by anyone, not just engineers)
+- The symptom, corrected against the code, and the nearby case that works
+- The root cause, step by step, with file citations. It also explains why the working case works.
+- Whether the bug can be reproduced locally, and what would prove it in a deployed environment
+- Blast radius: what else hits the same cause, and what depends on what the fix changes (including both QA repos)
+- A fix plan for each repo, the regression test that would have caught it, and a definition of done
+
+When the cause is in legacy, legacy stays read-only. The plan works around it in the new repos and records a finding. If the fix needs an endpoint change, `/triage` stops and hands off to `/propose` and then `/contract`. The plan is approved when a person says so, and then you implement it.
+
+---
+
 ### Skill order of operations
 
 ```
@@ -233,6 +251,18 @@ Epics created in Jira under MER-73162
     ▼
 /propose <ticket-key>       Per-ticket deep survey + proposal (backend & frontend in parallel)
     │  (you approve)
+    ▼
+implement                   Done inside each individual repo
+```
+
+Bugs take a shorter path:
+
+```
+Bug ticket
+    │
+    ▼
+/triage <ticket-key>        Trace every layer, find root cause, plan fix → notes/<scope-id>/triage.md (+ findings.md)
+    │  (you approve; an endpoint change hands off to /propose → /contract instead)
     ▼
 implement                   Done inside each individual repo
 ```
