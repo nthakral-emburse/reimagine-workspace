@@ -10,7 +10,7 @@ load, and design-principles loads when you work on TypeScript under `repos/new/`
 ## Claude Code setup
 
 - Read legacy code through the `legacy-reader` subagent, never in the main conversation.
-- Skills: `/epic-create`, `/refine`, `/contract`, `/propose`. `.claude/skills/` links to `.cursor/skills/`.
+- Skills: `/epic-create`, `/refine`, `/contract`, `/propose`, `/triage` (bugs). `.claude/skills/` links to `.cursor/skills/`.
 - `.cursor/` is the source of truth. Claude Code cannot load `.mdc` files, so these are
   copies that must be kept in sync by hand:
   - `.claude/rules/architecture.md` and `.claude/rules/legacy-read-only.md`: identical to the `.mdc`
