@@ -180,7 +180,7 @@ Workflow after `/refine`:
 
 **When to use:** after the contract PR is merged, before implementation starts on any individual Story.
 
-Give it a Jira ticket key (or plain-language description). It reads the code in every repo the ticket touches and writes `notes/<scope-id>/proposal.md` — a reviewable, implementation-ready design for that one ticket.
+Give it a Jira ticket key (or plain-language description). It reads the code in every repo the ticket touches and writes `notes/<ticket-id>/proposal.md` — a reviewable, implementation-ready design for that one ticket. Its first line is `Status: Draft`; a person approves it by changing that line to `Status: Approved — <name>, <date>`.
 
 The proposal includes:
 - A plain summary (readable by anyone, not just engineers)

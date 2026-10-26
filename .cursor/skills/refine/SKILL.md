@@ -114,9 +114,16 @@ per legacy repo and work from its report. Brief it with the Epic and any known e
 points from `notes/survey/mercury-routes.csv`.
 
 Ask it for RULES, not screens: what determines each status, count, or label; what is
-excluded; what is gated by a permission or feature flag. Every claim it returns carries a
+excluded; what is gated by a permission or a customer configuration. Every claim it returns carries a
 file path and line number — claims it cannot cite come back under "Could not determine",
 and those become open questions or spikes, not assertions.
+
+For customer configuration, tell it to search mercury for reads of `customerPreferences`,
+`customerExpensePreferences`, and active-user fields that are copied from customer
+preferences at login. For each one found, it reports the name, what it changes (hides,
+disables, or alters behaviour), and whether the check is browser-only or also enforced on
+the server. Server-side checks need the apollo reader; if neither can cite one, it goes
+under "Could not determine".
 
 Keep this shallow at refine time. You need enough to split the work, not enough to design
 it.
@@ -218,6 +225,11 @@ For everything new this Epic adds, answer:
    screen. This is a design question — it belongs with the Figma states and becomes
    frontend acceptance criteria.
 4. **Does a delegate get a different answer?** Permissions resolve per active person.
+5. **Which customer configurations change this feature?** Include settings that alter
+   behaviour, not only ones that hide it. For each, name the setting, its home
+   (`GET /v1/customers/{id}/preferences` or `GET /v1/customers/{id}/expense/preferences`),
+   its effect, and whether the server enforces it. If none are found in classic, write
+   "No customer configuration found" and add an open question asking product to confirm.
 
 The backend ticket always needs its own authorization check. Hiding a button is UX, not
 security.
@@ -245,13 +257,17 @@ the split is not ready.
 What the user can do that they could not do before. Testable statements — not descriptions
 of implementation.
 
-### Permissions
+### Permissions and customer configuration
 Which permission key gates this screen or action (e.g. `expense:report:recall`). What
 does the user see without that permission — hidden element, disabled button, or a
 no-access screen? Does acting as a delegate change it?
 
+Which customer configuration changes what this screen shows or does, and what the user
+sees when it is on versus off.
+
 If the feature adds nothing new that requires a permission check, write "No new permission
-gate — existing gating unchanged."
+gate — existing gating unchanged." If no customer configuration applies, write "No customer
+configuration applies."
 
 ### Screen context (AI widget)
 The in-app AI widget needs to know what is on screen so it can answer questions and take
@@ -380,8 +396,9 @@ This is your own pass, not an approval. Confirm every line before printing:
 - [ ] Every repo has a "today" section citing two or more of its own files
 - [ ] `api-contracts` was checked for an existing description of this endpoint
 - [ ] Any Figma link was opened, and the states it shows became frontend acceptance criteria
-- [ ] Every frontend ticket answers all four checklist items: functional ACs, permissions, screen context, and accessibility
+- [ ] Every frontend ticket answers all four checklist items: functional ACs, permissions and customer configuration, screen context, and accessibility
 - [ ] Every new screen, action, and endpoint names the permission key that gates it
+- [ ] Every customer configuration found in classic is named with its home and effect, or an open question asks product to confirm there is none
 - [ ] No ticket spans two repos
 - [ ] The contract is ticket 1, and every implementation ticket depends on it
 - [ ] Every ticket has testable acceptance criteria

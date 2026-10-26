@@ -12,7 +12,9 @@ A Jira key, a Jira URL, or a feature described in plain language.
 ## Hard rules
 
 - Do not create, edit, or transition Jira issues.
-- Do not write product code. The only file you produce is `notes/<scope-id>/proposal.md`.
+- Do not write product code. The only file you produce is `notes/<ticket-id>/proposal.md`, where
+  `<ticket-id>` is the lowercased Jira key (e.g. `notes/mer-81951/proposal.md`). The review and
+  handoff for the same ticket go in the same folder.
 - `repos/legacy/` is read-only. Never stage an edit there.
 - The ticket says what someone wants. Only the code says what exists. Never describe
   current behavior from the ticket text.
@@ -90,8 +92,16 @@ Say which this ticket is.
   copy. Error handling, loading states, and validation are usually this. Use the
   `legacy-reader` report to learn what can fail; do not carry their presentation forward.
 
-### 6. Write `notes/<scope-id>/proposal.md`
+### 6. Write `notes/<ticket-id>/proposal.md`
 
+- **Status** — the first line of the file is exactly `Status: Draft`. Only a person changes it, to
+  `Status: Approved — <name>, <date>`. `implement` in each repo will not start without that line.
+- **Acceptance criteria** — the ticket's criteria verbatim as `AC-1`, `AC-2`, … Then, per surface,
+  the criteria that repo's `implement` requires:
+  - aggregator: one decision per security rule `SEC-01` to `SEC-06` from
+    `repos/new/enterprise-web-aggregator/.cursor/rules/security-requirements.mdc`
+  - enterprise-web: the `AC-PERM-n`, `AC-A11Y-n`, and `AC-CTX-n` groups, as the enterprise-web
+    `propose` skill defines them
 - **Plain summary** — five sentences. No framework names, no file paths, no acronyms.
   What is broken today, what changes, what a user or support person notices afterward.
   Written for someone who has never opened either repo.
@@ -178,8 +188,8 @@ Print the file path and the plain summary. Then print:
 > It will translate the Contract section above into OpenAPI YAML and add it to the right
 > domain file in `api-contracts`. Merge that PR before starting any implementation.
 
-There is no automated gate on this document. It is approved when a person has read it
-and said so — never because your own pre-flight passed. Say plainly that it is awaiting
-review.
+The document is approved only when a person changes its first line to
+`Status: Approved — <name>, <date>` — never because your own pre-flight passed. Never write that
+line yourself. Say plainly that it is awaiting review.
 
 Do not offer to implement. Do not open tickets. Wait.
