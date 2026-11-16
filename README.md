@@ -133,7 +133,7 @@ reimagine-workspace/
 
 ## AI agent skills
 
-This workspace ships five agent skills. Four cover the feature-planning-to-contract workflow, and `/triage` covers bugs. They work in both Cursor and Claude Code: type the skill name in the Cursor chat or at the Claude Code prompt. Edit them in `.cursor/skills/`; `.claude/skills/` only links there.
+This workspace ships six agent skills. Four cover the feature-planning-to-contract workflow, `/triage` covers bugs, and `/pr-review` checks the code that follows. They work in both Cursor and Claude Code: type the skill name in the Cursor chat or at the Claude Code prompt. Edit them in `.cursor/skills/`; `.claude/skills/` only links there.
 
 ### `/epic-create` — Feature request → proposed Epics
 
@@ -231,6 +231,23 @@ When the cause is in legacy, legacy stays read-only. The plan works around it in
 
 ---
 
+### `/pr-review` — PR → check against the plan, the contract and the repo's standards
+
+**When to use:** when a PR is open in enterprise-web-aggregator, enterprise-web or api-contracts, before a person reviews it. This includes the contract PR that `/contract` prepares.
+
+Give it a PR URL or `<repo>#<number>`, for example `/pr-review enterprise-web-aggregator#201`. It finds the plan for the PR's ticket in `notes/` (a proposal, triage or refine) and checks the PR against it. It also checks the PR against the released contract, applies the repo's own review skill, and searches the other repos for anything the change breaks.
+
+Each repo's Bugbot and review skill already check that repo's code, so `/pr-review` doesn't repeat them. It adds what only the workspace can see:
+- Whether the plan is approved, and a verdict on each planned item, acceptance criterion and definition-of-done line for that repo
+- Changes the plan doesn't cover
+- For an api-contracts PR: whether the YAML matches the plan's contract. This is where API shape gets reviewed, so EWA PRs don't review it again.
+- For an EWA PR: whether the pinned contract release has everything the PR builds
+- Fields, status codes, test ids and selectors the change breaks in the other repos, including both QA repos
+
+It prints the report and a verdict: blocked, needs changes, or ready for a reviewer. It never posts, approves or merges. A person decides what to post.
+
+---
+
 ### Skill order of operations
 
 ```
@@ -247,12 +264,15 @@ Epics created in Jira under MER-73162
     │  (you approve)
     ▼
 /contract <epic-id>         Translate contract → OpenAPI YAML, lint, stop
-    │  (you open + merge PR in api-contracts)
+    │  (you open the PR in api-contracts, check it with /pr-review, and merge it)
     ▼
 /propose <ticket-key>       Per-ticket deep survey + proposal (backend & frontend in parallel)
     │  (you approve)
     ▼
 implement                   Done inside each individual repo
+    │
+    ▼
+/pr-review <repo>#<n>       Check the PR against the plan, the contract and the repo's standards; prints, never posts
 ```
 
 Bugs take a shorter path:
@@ -265,9 +285,12 @@ Bug ticket
     │  (you approve; an endpoint change hands off to /propose → /contract instead)
     ▼
 implement                   Done inside each individual repo
+    │
+    ▼
+/pr-review <repo>#<n>       Check the fix against triage.md, the contract and the repo's standards
 ```
 
-The skills never write product code, never create Jira issues automatically, and never push or open PRs. Every gate is a human decision.
+The skills never write product code, never create Jira issues automatically, never push or open PRs, and never post reviews. Every gate is a human decision.
 
 ---
 
