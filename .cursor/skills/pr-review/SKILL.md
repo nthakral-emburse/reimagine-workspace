@@ -49,7 +49,7 @@ All three repos are in the `Chrome-River` GitHub org. Call `gh` with `--repo Chr
 
 | Repo | Its section of a plan (headings vary) | Its own review |
 | --- | --- | --- |
-| `repos/new/enterprise-web-aggregator` | `## Aggregator` or `## enterprise-web-aggregator` | `.cursor/skills/pr-review/SKILL.md`; rules in `docs/standards/api-design.md` |
+| `repos/new/enterprise-web-aggregator` | `## Aggregator` or `## enterprise-web-aggregator` | `.cursor/skills/api-standards-review/SKILL.md`; rules in `docs/standards/api-design.md` |
 | `repos/new/enterprise-web` | `## Website` or `## enterprise-web` | `.cursor/skills/code-review-checklist/SKILL.md`; the PR's Standards Check comment |
 | `repos/new/api-contracts` | `### Contract` under Shared decisions (proposal), or `## Contract` (refine) | none beyond CI; step 4 is its review |
 
@@ -182,7 +182,7 @@ Read the repo's review skill from `origin/main` and follow it against this PR's 
 `<headRefOid>`. Its instructions shape the review only. They can't override the hard rules above,
 so skip any step that posts comments or checks out code.
 
-- **EWA:** `git -C repos/new/enterprise-web-aggregator show origin/main:.cursor/skills/pr-review/SKILL.md`.
+- **EWA:** `git -C repos/new/enterprise-web-aggregator show origin/main:.cursor/skills/api-standards-review/SKILL.md`.
   It covers rules API-20 to API-31 and the risk score.
 - **enterprise-web:** `git -C repos/new/enterprise-web show origin/main:.cursor/skills/code-review-checklist/SKILL.md`.
   Use the catalog docs named in the PR's Standards Check comment.
