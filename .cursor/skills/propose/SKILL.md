@@ -95,13 +95,26 @@ Say which this ticket is.
 ### 6. Write `notes/<ticket-id>/proposal.md`
 
 - **Status** — the first line of the file is exactly `Status: Draft`. Only a person changes it, to
-  `Status: Approved — <name>, <date>`. `implement` in each repo will not start without that line.
+  `Status: Approved — <name>, <date>`. Implementation does not start without that line, and
+  `/pr-review` reports a PR whose proposal is not approved.
 - **Acceptance criteria** — the ticket's criteria verbatim as `AC-1`, `AC-2`, … Then, per surface,
-  the criteria that repo's `implement` requires:
-  - aggregator: one decision per security rule `SEC-01` to `SEC-06` from
-    `repos/new/enterprise-web-aggregator/.cursor/rules/security-requirements.mdc`
-  - enterprise-web: the `AC-PERM-n`, `AC-A11Y-n`, and `AC-CTX-n` groups, as the enterprise-web
-    `propose` skill defines them
+  the groups below. Every group has at least one line: a criterion someone can check, or
+  `Not applicable — <reason>`. Mark each criterion that is not in the ticket text `(derived)`. Do
+  not renumber after approval, because `/pr-review` checks the PR against these ids.
+  - aggregator: one decision per implementation rule `API-20` to `API-31` in
+    `repos/new/enterprise-web-aggregator/docs/standards/api-design.md`, named by the rule. For
+    example: `API-27: needs expense:report:recall; a report from another customer returns 404`.
+  - enterprise-web, using `docs/architecture/permissions.md` and `docs/architecture/page-awareness.md`
+    in that repo:
+    - `AC-PERM-n`: what is gated, and by which `PERMISSION_KEYS` entry; what a user without the
+      key sees (hidden, disabled with a reason, or a no-access state); what shows while
+      permissions load, and when that request fails (fail closed)
+    - `AC-A11Y-n`: for each new or changed control and state, its accessible name and role,
+      keyboard use, visible focus, where focus goes when content opens or closes, and how async
+      results and errors are announced
+    - `AC-CTX-n`: for each screen added or changed, what the AI widget's screen context
+      registers. It exposes only actions the user can perform, registers nothing a permission
+      hides, and the Registered Pages Reference table in `page-awareness.md` is updated.
 - **Plain summary** — five sentences. No framework names, no file paths, no acronyms.
   What is broken today, what changes, what a user or support person notices afterward.
   Written for someone who has never opened either repo.
@@ -173,6 +186,7 @@ fails, go back.
 - Every surface in scope has a "Today" section citing three or more files from its
   own repo
 - No recommendation mentions a surface that has no "Today" section
+- Every surface in scope has its acceptance criteria groups, each with at least one line
 - Every open question names its surface
 - The plain summary contains no jargon
 - Every new or changed endpoint has a concrete JSON example for every response case
