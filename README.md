@@ -154,16 +154,16 @@ After approval it creates the Epics in Jira under MER-73162 with the `reimagine`
 
 ### `/refine` — Epic → design document + ticket split
 
-**When to use:** at the start of a new Epic, before any tickets exist.
+**When to use:** at the start of an Epic, whether or not it already has tickets.
 
-Give it a Jira Epic key. It reads the code across every repo the Epic touches, writes a single planning document at `notes/<epic-id>/refine.md`, and proposes a ticket-per-repo split for your review. Nothing is created in Jira until you explicitly approve the split.
+Give it a Jira Epic key. It reads the code across every repo the Epic touches, writes a single planning document at `notes/<epic-id>/refine.md`, and proposes a short list of stories for your review. It reuses the tickets the Epic already has and proposes a new one only for work none of them covers. A story can touch more than one repo. Nothing is created or changed in Jira until you explicitly approve the split.
 
 The document it produces includes:
 - A plain-language summary (no jargon)
 - A survey of every repo touched, with file citations
 - The API contract — written once so every repo builds against the same shape
-- A numbered ticket table with acceptance criteria, dependencies, and size estimates
-- Permissions, screen-context, and accessibility notes for every frontend ticket
+- A numbered list of stories with work by repo, acceptance criteria, dependencies, and a rough size
+- Permissions, screen-context, and accessibility notes for every story with frontend work
 
 Workflow after `/refine`:
 
@@ -171,7 +171,7 @@ Workflow after `/refine`:
 /refine <epic-key>          → notes/<epic-id>/refine.md
     you approve the split
 /contract <epic-id>         → OpenAPI PR in api-contracts  (merge this first)
-/propose <ticket-key>       → per-ticket proposal in each repo
+/propose <ticket-key>       → one proposal per ticket, covering every repo it touches
 ```
 
 ---

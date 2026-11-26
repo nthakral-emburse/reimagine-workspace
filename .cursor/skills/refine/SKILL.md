@@ -1,6 +1,6 @@
 ---
 name: refine
-description: Turn one Jira Epic into a high-level design, an OpenAPI contract, and a list of proposed tickets, one per repo. Writes notes/<epic-id>/refine.md. Never writes product code. Never creates Jira tickets.
+description: Turn one Jira Epic into a high-level design, an OpenAPI contract, and a short list of proposed stories that reuses the Epic's existing tickets. Writes notes/<epic-id>/refine.md. Never writes product code. Never creates Jira tickets.
 disable-model-invocation: true
 icon: git-branch
 ---
@@ -14,7 +14,7 @@ document** containing:
 
 1. The solution, in plain language
 2. The API contract — written once, so every repo builds the same shape
-3. A list of proposed tickets, each belonging to exactly one repo
+3. A short list of proposed stories, starting from the tickets the Epic already has
 
 **Output:** one file — `notes/<epic-id>/refine.md`
 
@@ -51,8 +51,9 @@ pull request, and must be merged before any implementation ticket starts. After 
 backend, the frontend, and the tests all build against the same merged spec — nobody is
 guessing, and nobody is waiting on someone else to decide.
 
-Because every ticket belongs to exactly one repo, each goes to that repo's own `propose`.
-You should not normally need the workspace-level `propose` after running this.
+A story that touches one repo goes to that repo's own `propose`. A story that touches
+more than one goes to `/propose <ticket-key>` in this workspace, which reads every repo
+the ticket touches.
 
 ## Tickets are never created automatically
 
@@ -69,7 +70,7 @@ tickets costs a cleanup.
 
 **Phase 1 — Refine:** Read the Epic and all repos, write `notes/<epic-id>/refine.md`, print the ticket table, wait for approval. Do not create any Jira issues.
 
-**Phase 2 — Create:** When the user says the split is approved, create every ticket in Jira, add dependency links, verify, and record the created keys in the refine.md. This is the only time Jira issues are created or linked.
+**Phase 2 — Update and create:** When the user says the split is approved, add a comment to each reused ticket, create only the new ones, add dependency links, verify, and record the keys in the refine.md. This is the only time Jira issues are created, commented on, or linked.
 
 ## Rules
 
@@ -78,8 +79,13 @@ tickets costs a cleanup.
 - `repos/legacy/` is read-only.
 - The Epic says what someone wants. Only the code says what exists. Never describe
   today's behavior from the Epic text.
-- **One ticket, one repo.** Work needing both the frontend and the backend is two tickets
-  with a dependency — never one ticket with two halves.
+- **Fewest stories that work.** A story is one piece of the Epic that someone can use or
+  verify when it is done. It can touch more than one repo: list its work under one heading
+  per repo. Never split by repo, layer, endpoint, or size alone. See step 6.
+- **Existing tickets first.** Fit the work into the tickets the Epic already has. Propose
+  a new story only for work that none of them covers.
+- **No QA automation tickets.** QA automation belongs to the SDET. What needs coverage
+  goes in the acceptance criteria and in "Done means".
 - Never recommend anything about a repo you have not opened.
 - Plain language. No invented nouns. If a technical word is unavoidable, put a short
   glossary at the top of the document.
@@ -140,7 +146,8 @@ out-of-scope, **and every child ticket that already exists**.
 
 If Jira is unreachable, say so and stop. Do not guess.
 
-The existing children matter — do not propose a ticket that is already open.
+The existing children are the starting split. For each one, write down what it already
+covers. Step 6 fits the work into them before it proposes anything new.
 
 Then read every Confluence page linked from the Epic or its children. If one exists, its
 shapes are the starting point for step 3: copy them rather than inventing your own, and
@@ -148,7 +155,7 @@ note anywhere the code contradicts them. If nothing is linked, write one line sa
 
 ### Designs in Figma
 
-If the Epic or any child links a Figma file, open it. A frontend ticket written without
+If the Epic or any child links a Figma file, open it. Frontend work written without
 the design will have vague acceptance criteria.
 
 Use `get_screenshot` to see the screen and `get_metadata` for its structure. Use
@@ -156,7 +163,7 @@ Use `get_screenshot` to see the screen and `get_metadata` for its structure. Use
 
 Write down what the frontend has to handle: which screens are involved, and which states
 the design shows — loading, empty, error, and validation. Those states become acceptance
-criteria on the frontend ticket, and they are the ones most often missed.
+criteria on the story that builds the screen, and they are the ones most often missed.
 
 Do **not** call `get_design_context` here. It returns implementation-level detail and
 belongs in `enterprise-web` at implement time. Do not write component code, and do not
@@ -231,7 +238,7 @@ For everything new this Epic adds, answer:
    its effect, and whether the server enforces it. If none are found in classic, write
    "No customer configuration found" and add an open question asking product to confirm.
 
-The backend ticket always needs its own authorization check. Hiding a button is UX, not
+The backend work always needs its own authorization check. Hiding a button is UX, not
 security.
 
 ### Where the contract goes
@@ -248,10 +255,11 @@ to raise, and follow that repo's rules:
 Reuse the shared schemas in `schemas/` — `ProblemDetail.yaml`, `Uda.yaml` and the rest —
 rather than redefining them.
 
-## 4. Frontend ticket checklist — required for every frontend ticket
+## 4. Frontend checklist — required for every story with frontend work
 
-Every ticket in `enterprise-web` must answer these four things. If any cannot be answered,
-the split is not ready.
+Every story with work in `enterprise-web` must answer these four things. If any cannot be
+answered, the split is not ready. They are acceptance criteria on that story, never
+tickets of their own.
 
 ### Functional acceptance criteria
 What the user can do that they could not do before. Testable statements — not descriptions
@@ -310,7 +318,9 @@ code — the answer requires a timed experiment or a call with another team.
 - Getting it wrong would change the ticket split significantly
 
 **Do not propose a spike** to delay a decision, to learn a technology generally, or when
-the question could be answered by reading one more file.
+the question could be answered by reading one more file. A question for product or design
+is not a spike: it goes under Open questions. If the Epic already has a technical design
+or investigation story, put the question there and do not add a spike.
 
 A spike ticket needs:
 
@@ -328,32 +338,66 @@ not a pull request. Implementation tickets that depend on the spike may be creat
 (with a "blocked by spike" dependency) or after the spike closes, depending on whether
 the ACs can be written without the answer.
 
-## 6. Split into tickets
+## 6. Split into stories
 
-Each proposed ticket needs:
+Aim for the fewest stories that still let people work at the same time. A story is one
+piece of the Epic that someone can use or verify when it is done. "Memorize a line item"
+is one story: the endpoint, the button and the dialog. It is not a contract ticket, three
+backend tickets, a frontend ticket and a QA ticket.
+
+Work through this in order:
+
+1. **Start from the tickets the Epic already has.** Put each piece of work from steps 2
+   to 4 into the existing ticket it belongs to. Keep the split those tickets already
+   have, including a backend and frontend split, unless the user asks to change it.
+2. **Propose a new story only for work no existing ticket covers.** Say why no existing
+   or other proposed story can hold it. "It is in another repo" and "it is a different
+   endpoint" are not reasons.
+3. **At most one contract ticket per Epic.** It covers every contract change in the Epic.
+   If the Epic already has a technical design or contract story, use that one. If only
+   one story uses the contract, skip the ticket: the contract pull request is the first
+   piece of that story.
+
+These are never tickets of their own:
+
+- A backend stub. It is the first pull request of its story.
+- A field added to an existing response, or a setting returned from an existing endpoint.
+  It goes in the story that needs it.
+- Checking work that is already built. Note it in the story that depends on it.
+- QA automation. It belongs to the SDET.
+- Permissions, screen context, accessibility or translations. They are acceptance
+  criteria on the story they belong to.
+
+Size alone is never a reason to split. A large story ships as several pull requests under
+one ticket. Split a story only when a part can be released and verified by itself.
+
+Then count. Write the count as "N stories: X reused, Y new". If there are more stories
+than bullets under the Epic's "What this Epic covers", merge until there are not, or say
+in one line why this Epic needs more.
+
+Each story needs:
 
 | | |
 | --- | --- |
 | **Title** | Imperative (or "Spike: question" for spikes), under 60 characters |
 | **Type** | Story or Spike |
-| **Repo** | Exactly one |
+| **Existing or new** | The Jira key if it is reused. If new, why no other story can hold it |
+| **Repos** | Every repo it touches |
 | **Ask** | One sentence |
+| **Work by repo** | A few lines under each repo it touches. Not a design: `propose` does that |
 | **Acceptance criteria** | Testable. If you cannot write them, the split is wrong — go back. For a spike: the artifact produced and the question answered |
 | **Out of scope** | What a reader would assume is included but is not |
 | **Depends on** | Other tickets in this list, by number |
-| **Size** | Rough diff estimate. Over ~400 lines means split it again. Spikes: time box only |
+| **Size** | S, M or L. Spikes: time box only |
 
-The normal order for one new endpoint:
+The order of work inside an Epic:
 
 0. **Spike** (if needed) — resolves any blocking unknowns first
-1. **Contract** — the OpenAPI change in `api-contracts`. Always its own ticket. Everything below depends on it
-2. **Backend stub** — the endpoint returning a stub that matches the merged spec
-3. **Backend logic** — the real logic and its tests
-4. **Frontend** — consume the endpoint against the stub
-5. **QA** — Playwright coverage
+1. **Contract** — the OpenAPI change in `api-contracts`, merged before any code that uses it starts
+2. **Backend and frontend** — at the same time, both against the merged spec
 
-Once ticket 1 merges, tickets 2 and 4 can start at the same time — that is what contract
-first buys you.
+Once the contract merges, the backend and the frontend can start at the same time — that
+is what contract first buys you.
 
 Do not propose a ticket for work with no acceptance criteria of its own.
 
@@ -369,12 +413,13 @@ In this order:
 2. **Epic** — key, title, goal in one line.
 3. **Existing designs** — Confluence pages and Figma screens found, and every place the
    code disagrees with them. Link the Figma file and list the states it shows.
-4. **Tickets already open** — from step 1, or "none".
+4. **Tickets already open** — from step 1 with what each one covers, or "none".
 5. **Each repo today** — the survey from step 2, with its file citations.
 6. **Parity or standard-setting** — one line and why.
 7. **The contract** — from step 3, in full, including whether it is breaking, and the
    permission key that gates each new screen, action, and endpoint.
-8. **Proposed tickets** — from step 4, numbered.
+8. **Proposed stories** — from step 6, numbered. Start with the count ("N stories: X
+   reused, Y new"). Reused tickets first, then new ones.
 9. **Order of work** — what goes first, what can run in parallel, what blocks what. Name
    the first ticket that delivers something visible; it should not be last.
 10. **Risks** — what could go wrong that reading the code could not settle.
@@ -385,9 +430,9 @@ In this order:
 | Ticket | Next step |
 | --- | --- |
 | Contract | Run `/contract <epic-id>` in this workspace — it translates this document's contract section into OpenAPI YAML and appends it to the right domain file in `api-contracts`. Then open the PR and merge it before starting anything below. |
-| Backend | `/propose` in `enterprise-web-aggregator`, then `/implement` there |
-| Frontend | `/propose` in `enterprise-web`, then `/implement` there |
-| QA | `handoff` in the backend repo writes the test plan; `/implement` in `qa-enterprise` builds from it |
+| Story in one repo | `/propose` in that repo, then `/implement` there |
+| Story in more than one repo | `/propose <ticket-key>` in this workspace, then `/implement` in each repo |
+| QA | `handoff` in the backend repo writes the test plan for the SDET. No QA ticket is created |
 
 ## 8. Phase 1 complete — pre-flight and stop
 
@@ -396,14 +441,16 @@ This is your own pass, not an approval. Confirm every line before printing:
 - [ ] Every repo has a "today" section citing two or more of its own files
 - [ ] `api-contracts` was checked for an existing description of this endpoint
 - [ ] Any Figma link was opened, and the states it shows became frontend acceptance criteria
-- [ ] Every frontend ticket answers all four checklist items: functional ACs, permissions and customer configuration, screen context, and accessibility
+- [ ] Every story with frontend work answers all four checklist items: functional ACs, permissions and customer configuration, screen context, and accessibility
 - [ ] Every new screen, action, and endpoint names the permission key that gates it
 - [ ] Every customer configuration found in classic is named with its home and effect, or an open question asks product to confirm there is none
-- [ ] No ticket spans two repos
-- [ ] The contract is ticket 1, and every implementation ticket depends on it
+- [ ] Every new story says why no existing or other proposed story can hold it
+- [ ] No ticket exists only for a stub, a single field, a check of work already built, or QA automation
+- [ ] The story count is stated, and it is not more than the bullets under the Epic's "What this Epic covers", or one line says why
+- [ ] The contract comes first: every story that uses it depends on it being merged
 - [ ] Every ticket has testable acceptance criteria
 - [ ] The contract says whether it is breaking or non-breaking
-- [ ] Every already-open ticket is either reused or explicitly replaced
+- [ ] Every already-open ticket is reused, or the document says why it cannot be
 - [ ] The plain summary has no jargon
 - [ ] No Jira issue was created or changed
 
@@ -412,7 +459,7 @@ by exactly this:
 
 > This is a proposal, not a plan of record. Nothing has been created in Jira and no
 > contract PR has been opened. Review the ticket table. When you are happy with the
-> split, say so and the tickets will be created.
+> split, say so. Reused tickets will get a comment and new ones will be created.
 
 There is no automated gate on this document. It is approved when a person has read it
 and said so — never because your own pre-flight passed. Phase 2 starts only on an
@@ -422,13 +469,17 @@ Do not offer to implement. Wait.
 
 ---
 
-## 9. Phase 2 — Create tickets (only after user approval)
+## 9. Phase 2 — Update and create tickets (only after user approval)
 
 When the user says the split is approved, run these steps in order. Do not skip any.
 
-### 9a. Create all tickets in Jira
+### 9a. Comment on reused tickets, then create the new ones
 
-For each ticket in the proposed table, call `createJiraIssue`:
+For each reused ticket, add one comment with `addOrEditJiraIssueComment`: the work by
+repo, the acceptance criteria this document adds, and a pointer to the contract section.
+Do not rewrite its description, and do not change its title, status, assignee or parent.
+
+For each new story in the proposed table, call `createJiraIssue`:
 
 - **Project:** the project key of the Epic (e.g. `MER`)
 - **Issue type:** Story (or Spike if marked as such)
@@ -445,7 +496,7 @@ For each "Depends on" relationship in the ticket table, create a `Blocks` link:
 - The ticket being depended on **blocks** the dependent ticket
 - Example: "T4 depends on T2" → create link: T2 blocks T4 (inwardIssue: T2, outwardIssue: T4, type: "Blocks")
 
-Add every dependency in the table. The contract ticket (T1) must block every ticket that lists it as a dependency.
+Add every dependency in the table, skipping links that already exist. The contract ticket, when there is one, must block every story that lists it as a dependency.
 
 ### 9c. Verify
 
@@ -457,31 +508,32 @@ Fetch each created ticket from Jira and confirm:
 | Each ticket has the correct type — Story or Spike | A spike created as a Story will be treated like implementation work |
 | Acceptance criteria are present and match the proposal | May be truncated if the field limit is exceeded |
 | Every "Depends on" relationship has a matching Blocks link | Without links, teams start the wrong things first |
-| The contract ticket is linked as a blocker on every implementation ticket | Most commonly missed link |
-| Frontend tickets have all four checklist sections | Permissions, screen context, and a11y are the ones most often dropped |
+| Every reused ticket has the new comment, and its description is unchanged | The comment is how the team sees the technical details |
+| The contract ticket, when there is one, is linked as a blocker on every story that uses it | Most commonly missed link |
+| Stories with frontend work have all four checklist sections | Permissions, screen context, and a11y are the ones most often dropped |
 
 If anything is wrong, fix it directly via Jira before continuing.
 
 ### 9d. Record the created keys in the refine.md
 
-Append a "Created tickets" section to `notes/<epic-id>/refine.md`:
+Append a "Tickets" section to `notes/<epic-id>/refine.md`:
 
 ```markdown
-## Created tickets
+## Tickets
 
-| Proposed | Jira key | Title |
-| --- | --- | --- |
-| T1 | MER-XXXXX | [title](link) |
-| T2 | MER-XXXXX | [title](link) |
+| Proposed | Jira key | Reused or created | Title |
+| --- | --- | --- | --- |
+| T1 | MER-XXXXX | Reused, comment added | [title](link) |
+| T2 | MER-XXXXX | Created | [title](link) |
 ...
 ```
 
-This makes the refine.md the permanent record of what was created.
+This makes the refine.md the permanent record of what was updated and created.
 
 ### 9e. Stop
 
-Print the created ticket table and this message:
+Print the ticket table from 9d and this message:
 
-> All tickets are created and linked. Next step: run `/contract <epic-id>` to translate
+> All tickets are updated or created, and linked. Next step: run `/contract <epic-id>` to translate
 > the contract section into OpenAPI YAML, then open the PR in `api-contracts` and merge
 > it before any implementation starts.
