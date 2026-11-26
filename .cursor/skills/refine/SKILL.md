@@ -1,6 +1,6 @@
 ---
 name: refine
-description: Turn one Jira Epic into a high-level design, an OpenAPI contract, and a short list of proposed stories that reuses the Epic's existing tickets. Writes notes/<epic-id>/refine.md. Never writes product code. Never creates Jira tickets.
+description: Turn one Jira Epic into a high-level design, an OpenAPI contract, and a proposed set of stories checked against a story checklist. Works for an Epic with or without tickets: it proposes new stories and suggests what to do with each existing ticket. Writes notes/<epic-id>/refine.md. Never writes product code. Never creates Jira tickets.
 disable-model-invocation: true
 icon: git-branch
 ---
@@ -14,7 +14,8 @@ document** containing:
 
 1. The solution, in plain language
 2. The API contract — written once, so every repo builds the same shape
-3. A short list of proposed stories, starting from the tickets the Epic already has
+3. A proposed set of stories, each checked against the story checklist in step 6. When the
+   Epic already has tickets, a suggested action for each one
 
 **Output:** one file — `notes/<epic-id>/refine.md`
 
@@ -70,7 +71,7 @@ tickets costs a cleanup.
 
 **Phase 1 — Refine:** Read the Epic and all repos, write `notes/<epic-id>/refine.md`, print the ticket table, wait for approval. Do not create any Jira issues.
 
-**Phase 2 — Update and create:** When the user says the split is approved, add a comment to each reused ticket, create only the new ones, add dependency links, verify, and record the keys in the refine.md. This is the only time Jira issues are created, commented on, or linked.
+**Phase 2 — Update and create:** When the user says the split is approved, apply the approved action to each existing ticket (keep, update, merge, split or close), create the new stories, add dependency links, verify, and record the keys in the refine.md. This is the only time Jira issues are created, changed, or linked.
 
 ## Rules
 
@@ -79,11 +80,13 @@ tickets costs a cleanup.
 - `repos/legacy/` is read-only.
 - The Epic says what someone wants. Only the code says what exists. Never describe
   today's behavior from the Epic text.
-- **Fewest stories that work.** A story is one piece of the Epic that someone can use or
-  verify when it is done. It can touch more than one repo: list its work under one heading
-  per repo. Never split by repo, layer, endpoint, or size alone. See step 6.
-- **Existing tickets first.** Fit the work into the tickets the Epic already has. Propose
-  a new story only for work that none of them covers.
+- **Every story passes the story checklist.** The checklist in step 6b decides how the
+  work is split: one outcome per story, the right size, testable, a clear title, and the
+  rest. Run every proposed story through it before writing the document.
+- **Suggest the best allocation of the work.** Tickets the Epic already has are an input,
+  not a limit. For each one, suggest what to do: keep, update its title or description,
+  merge, split, or close. Propose new stories wherever the work needs them. An Epic with
+  no tickets gets all new stories.
 - **No QA automation tickets.** QA automation belongs to the SDET. What needs coverage
   goes in the acceptance criteria and in "Done means".
 - Never recommend anything about a repo you have not opened.
@@ -146,8 +149,9 @@ out-of-scope, **and every child ticket that already exists**.
 
 If Jira is unreachable, say so and stop. Do not guess.
 
-The existing children are the starting split. For each one, write down what it already
-covers. Step 6 fits the work into them before it proposes anything new.
+For each existing child, write down what it covers and whether its title and description
+say that clearly. Step 6c uses this to suggest what to do with each one. If the Epic has
+no children, write "none": every story will be new.
 
 Then read every Confluence page linked from the Epic or its children. If one exists, its
 shapes are the starting point for step 3: copy them rather than inventing your own, and
@@ -340,40 +344,86 @@ the ACs can be written without the answer.
 
 ## 6. Split into stories
 
-Aim for the fewest stories that still let people work at the same time. A story is one
-piece of the Epic that someone can use or verify when it is done. "Memorize a line item"
-is one story: the endpoint, the button and the dialog. It is not a contract ticket, three
-backend tickets, a frontend ticket and a QA ticket.
+Three steps: draft the split from the work, run every story through the checklist, then
+decide what happens to the tickets the Epic already has.
 
-Work through this in order:
+### 6a. Draft the split
 
-1. **Start from the tickets the Epic already has.** Put each piece of work from steps 2
-   to 4 into the existing ticket it belongs to. Keep the split those tickets already
-   have, including a backend and frontend split, unless the user asks to change it.
-2. **Propose a new story only for work no existing ticket covers.** Say why no existing
-   or other proposed story can hold it. "It is in another repo" and "it is a different
-   endpoint" are not reasons.
-3. **At most one contract ticket per Epic.** It covers every contract change in the Epic.
-   If the Epic already has a technical design or contract story, use that one. If only
-   one story uses the contract, skip the ticket: the contract pull request is the first
-   piece of that story.
+Group the work from steps 2 to 4 by outcome: what someone can do or verify when it is
+done. Draft the split from the work itself, as if the Epic had no tickets. The existing
+tickets come in at 6c.
 
-These are never tickets of their own:
+### 6b. Story checklist
 
-- A backend stub. It is the first pull request of its story.
-- A field added to an existing response, or a setting returned from an existing endpoint.
-  It goes in the story that needs it.
-- Checking work that is already built. Note it in the story that depends on it.
-- QA automation. It belongs to the SDET.
-- Permissions, screen context, accessibility or translations. They are acceptance
-  criteria on the story they belong to.
+Run every proposed story through this list. A story that fails an item is reworked
+(merged, split by outcome, or rewritten) until it passes. Do not write the document while
+any story fails.
 
-Size alone is never a reason to split. A large story ships as several pull requests under
-one ticket. Split a story only when a part can be released and verified by itself.
+1. **One outcome.** When the story is done, someone can use it or verify it by itself: a
+   person can do something new, or another story can build on it. "Memorize a line item"
+   is one outcome: the endpoint, the button and the dialog together.
+2. **Appropriately sized.** Estimate it in pull requests: S is one, M is two or three, L
+   is four to six.
+   - Larger than L: split it by outcome (item 1), never by repo, layer or endpoint.
+   - Smaller than one pull request: it is not a story. Put it in the story that needs it.
+     This covers a backend stub, one field added to a response, one setting returned from
+     an existing endpoint, and a check of work that is already built.
+3. **Testable acceptance criteria of its own.** A person or a test can check each
+   criterion. If you cannot write them, the split is wrong.
+4. **Work listed by repo.** It names every repo it touches and what changes in each. A
+   story may touch more than one repo. Work in a second repo is not a reason for a second
+   story.
+5. **A title that says the outcome.** Imperative, plain words, under 60 characters. Not an
+   endpoint path or a class name.
+6. **Complete for its screens.** Permissions, customer configuration, screen context,
+   accessibility and translations are acceptance criteria on the story they belong to
+   (step 4), never stories of their own.
+7. **No question hidden inside it.** A question for product or design goes under Open
+   questions, with the stories it blocks. A question that needs an experiment is a spike
+   (step 5). Neither is written into a story as work.
+8. **No overlap.** It does not ask for something another story or an existing ticket
+   already asks for. Two that ask for the same thing become one.
+9. **Dependencies named.** "Depends on" lists every story it waits for, and no story
+   depends on itself through a chain.
+10. **Contract first.** If it uses a shape from step 3, it depends on the contract being
+    merged. There is at most one contract ticket per Epic. If the Epic already has a
+    technical design or contract story, use that one. If only one story uses the
+    contract, the contract pull request is the first piece of that story and there is no
+    contract ticket.
 
-Then count. Write the count as "N stories: X reused, Y new". If there are more stories
-than bullets under the Epic's "What this Epic covers", merge until there are not, or say
-in one line why this Epic needs more.
+Then check the set as a whole:
+
+- **Coverage.** Map each story to the items in the Epic's scope that it delivers. Every
+  scope item has a story.
+- **No stray stories.** A story that maps to no scope item is out of scope or too thin:
+  drop it or merge it. When two stories map to the same single item, say in one line why
+  they are separate.
+
+### 6c. Decide what happens to existing tickets
+
+Skip this when the Epic has no tickets: every story is new.
+
+Compare the split from 6a and 6b with the tickets from step 1. The goal is the best
+allocation of the work, not keeping the tickets as they are. For each existing ticket,
+suggest one action and give the reason:
+
+| Action | When | What you write |
+| --- | --- | --- |
+| **Keep** | It matches a story, and its title and description are right | The technical details to add as a comment |
+| **Update** | It matches a story, but its title or description is wrong, empty or misleading. A title that is an endpoint path is one example | The new title and the new description, in full |
+| **Merge** | It asks for the same thing as another ticket, or it is one part of a story | The ticket that stays, and what moves into it |
+| **Split** | It holds more than one outcome | The stories it becomes |
+| **Close** | Nothing in the split needs it | Why |
+
+Work that no existing ticket holds becomes a new story.
+
+These are suggestions. Nothing changes in Jira until the user approves, and the user can
+change any of them.
+
+### 6d. Write each story
+
+Start the section with the count, for example "6 stories: 4 existing, 2 new", and a table
+of the existing tickets with the suggested action for each.
 
 Each story needs:
 
@@ -381,14 +431,14 @@ Each story needs:
 | --- | --- |
 | **Title** | Imperative (or "Spike: question" for spikes), under 60 characters |
 | **Type** | Story or Spike |
-| **Existing or new** | The Jira key if it is reused. If new, why no other story can hold it |
+| **Existing or new** | "New", or the Jira key with the suggested action from 6c |
 | **Repos** | Every repo it touches |
 | **Ask** | One sentence |
 | **Work by repo** | A few lines under each repo it touches. Not a design: `propose` does that |
 | **Acceptance criteria** | Testable. If you cannot write them, the split is wrong — go back. For a spike: the artifact produced and the question answered |
 | **Out of scope** | What a reader would assume is included but is not |
 | **Depends on** | Other tickets in this list, by number |
-| **Size** | S, M or L. Spikes: time box only |
+| **Size** | S, M or L, as defined in checklist item 2. Spikes: time box only |
 
 The order of work inside an Epic:
 
@@ -418,8 +468,8 @@ In this order:
 6. **Parity or standard-setting** — one line and why.
 7. **The contract** — from step 3, in full, including whether it is breaking, and the
    permission key that gates each new screen, action, and endpoint.
-8. **Proposed stories** — from step 6, numbered. Start with the count ("N stories: X
-   reused, Y new"). Reused tickets first, then new ones.
+8. **Proposed stories** — from step 6, numbered. Start with the count and the table of
+   existing tickets with the suggested action for each. Then one section per story.
 9. **Order of work** — what goes first, what can run in parallel, what blocks what. Name
    the first ticket that delivers something visible; it should not be last.
 10. **Risks** — what could go wrong that reading the code could not settle.
@@ -444,13 +494,13 @@ This is your own pass, not an approval. Confirm every line before printing:
 - [ ] Every story with frontend work answers all four checklist items: functional ACs, permissions and customer configuration, screen context, and accessibility
 - [ ] Every new screen, action, and endpoint names the permission key that gates it
 - [ ] Every customer configuration found in classic is named with its home and effect, or an open question asks product to confirm there is none
-- [ ] Every new story says why no existing or other proposed story can hold it
-- [ ] No ticket exists only for a stub, a single field, a check of work already built, or QA automation
-- [ ] The story count is stated, and it is not more than the bullets under the Epic's "What this Epic covers", or one line says why
+- [ ] Every proposed story passes every item of the story checklist in step 6b
+- [ ] Every item in the Epic's scope maps to a story, and every story maps to an item
+- [ ] Every existing ticket has a suggested action (keep, update, merge, split or close) and a reason
+- [ ] No QA automation ticket is proposed
 - [ ] The contract comes first: every story that uses it depends on it being merged
 - [ ] Every ticket has testable acceptance criteria
 - [ ] The contract says whether it is breaking or non-breaking
-- [ ] Every already-open ticket is reused, or the document says why it cannot be
 - [ ] The plain summary has no jargon
 - [ ] No Jira issue was created or changed
 
@@ -459,7 +509,8 @@ by exactly this:
 
 > This is a proposal, not a plan of record. Nothing has been created in Jira and no
 > contract PR has been opened. Review the ticket table. When you are happy with the
-> split, say so. Reused tickets will get a comment and new ones will be created.
+> split, say so. The approved changes will then be made to the existing tickets and the
+> new stories will be created.
 
 There is no automated gate on this document. It is approved when a person has read it
 and said so — never because your own pre-flight passed. Phase 2 starts only on an
@@ -473,11 +524,21 @@ Do not offer to implement. Wait.
 
 When the user says the split is approved, run these steps in order. Do not skip any.
 
-### 9a. Comment on reused tickets, then create the new ones
+### 9a. Apply the approved actions, then create the new stories
 
-For each reused ticket, add one comment with `addOrEditJiraIssueComment`: the work by
-repo, the acceptance criteria this document adds, and a pointer to the contract section.
-Do not rewrite its description, and do not change its title, status, assignee or parent.
+Apply only what the user approved. For each existing ticket:
+
+| Approved action | What to do |
+| --- | --- |
+| **Keep** | Add one comment with `addOrEditJiraIssueComment`: the work by repo, the acceptance criteria this document adds, and a pointer to the contract section. Leave the title and description as they are |
+| **Update** | Replace the title and description with the approved text using `editJiraIssue`. Add a comment that says the text was replaced from this refine and why. Jira's history keeps the old text |
+| **Merge** | Link the ticket to the one that stays: "duplicates" when it asks for the same thing, otherwise "relates to". Comment on both. Add to the ticket that stays anything it lacks |
+| **Split** | Create the new stories, link each one to the original, and update or close the original as approved |
+| **Close** | Comment with the reason, then close it |
+
+Never change an assignee. Close or transition a ticket only when the user approved that
+for that ticket by name. If a ticket has an assignee and its action is Update, Merge,
+Split or Close, tell the user before applying it.
 
 For each new story in the proposed table, call `createJiraIssue`:
 
@@ -508,7 +569,7 @@ Fetch each created ticket from Jira and confirm:
 | Each ticket has the correct type — Story or Spike | A spike created as a Story will be treated like implementation work |
 | Acceptance criteria are present and match the proposal | May be truncated if the field limit is exceeded |
 | Every "Depends on" relationship has a matching Blocks link | Without links, teams start the wrong things first |
-| Every reused ticket has the new comment, and its description is unchanged | The comment is how the team sees the technical details |
+| Every existing ticket shows its approved action: the comment, the new text, the link, or the new status | An action that only half applied leaves two tickets disagreeing |
 | The contract ticket, when there is one, is linked as a blocker on every story that uses it | Most commonly missed link |
 | Stories with frontend work have all four checklist sections | Permissions, screen context, and a11y are the ones most often dropped |
 
@@ -521,10 +582,11 @@ Append a "Tickets" section to `notes/<epic-id>/refine.md`:
 ```markdown
 ## Tickets
 
-| Proposed | Jira key | Reused or created | Title |
+| Proposed | Jira key | What was done | Title |
 | --- | --- | --- | --- |
-| T1 | MER-XXXXX | Reused, comment added | [title](link) |
+| T1 | MER-XXXXX | Kept, comment added | [title](link) |
 | T2 | MER-XXXXX | Created | [title](link) |
+| - | MER-XXXXX | Merged into T1 | [title](link) |
 ...
 ```
 

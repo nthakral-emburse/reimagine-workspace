@@ -156,7 +156,7 @@ After approval it creates the Epics in Jira under MER-73162 with the `reimagine`
 
 **When to use:** at the start of an Epic, whether or not it already has tickets.
 
-Give it a Jira Epic key. It reads the code across every repo the Epic touches, writes a single planning document at `notes/<epic-id>/refine.md`, and proposes a short list of stories for your review. It reuses the tickets the Epic already has and proposes a new one only for work none of them covers. A story can touch more than one repo. Nothing is created or changed in Jira until you explicitly approve the split.
+Give it a Jira Epic key. It reads the code across every repo the Epic touches, writes a single planning document at `notes/<epic-id>/refine.md`, and proposes a set of stories for your review. Every story is checked against a story checklist: one outcome, the right size, testable acceptance criteria, a title that says the outcome. When the Epic already has tickets, it suggests what to do with each one: keep, update, merge, split or close. A story can touch more than one repo. Nothing is created or changed in Jira until you explicitly approve the split.
 
 The document it produces includes:
 - A plain-language summary (no jargon)
