@@ -385,11 +385,11 @@ any story fails.
    already asks for. Two that ask for the same thing become one.
 9. **Dependencies named.** "Depends on" lists every story it waits for, and no story
    depends on itself through a chain.
-10. **Contract first.** If it uses a shape from step 3, it depends on the contract being
-    merged. There is at most one contract ticket per Epic. If the Epic already has a
-    technical design or contract story, use that one. If only one story uses the
-    contract, the contract pull request is the first piece of that story and there is no
-    contract ticket.
+10. **Contract first.** If it uses a shape from step 3, it depends on the contract ticket
+    that covers that shape being merged. An Epic with a contract has at least one
+    contract ticket. If the Epic already has a technical design or contract story, use
+    that one. Add more when parts of the contract can merge separately, for example one
+    per group of endpoints, so a story waits only for the part of the contract it uses.
 
 Then check the set as a whole:
 
@@ -498,7 +498,7 @@ This is your own pass, not an approval. Confirm every line before printing:
 - [ ] Every item in the Epic's scope maps to a story, and every story maps to an item
 - [ ] Every existing ticket has a suggested action (keep, update, merge, split or close) and a reason
 - [ ] No QA automation ticket is proposed
-- [ ] The contract comes first: every story that uses it depends on it being merged
+- [ ] An Epic with a contract has at least one contract ticket, and every story that uses the contract depends on the contract ticket that covers its shape
 - [ ] Every ticket has testable acceptance criteria
 - [ ] The contract says whether it is breaking or non-breaking
 - [ ] The plain summary has no jargon
@@ -557,7 +557,7 @@ For each "Depends on" relationship in the ticket table, create a `Blocks` link:
 - The ticket being depended on **blocks** the dependent ticket
 - Example: "T4 depends on T2" → create link: T2 blocks T4 (inwardIssue: T2, outwardIssue: T4, type: "Blocks")
 
-Add every dependency in the table, skipping links that already exist. The contract ticket, when there is one, must block every story that lists it as a dependency.
+Add every dependency in the table, skipping links that already exist. Every contract ticket must block every story that lists it as a dependency.
 
 ### 9c. Verify
 
@@ -570,7 +570,7 @@ Fetch each created ticket from Jira and confirm:
 | Acceptance criteria are present and match the proposal | May be truncated if the field limit is exceeded |
 | Every "Depends on" relationship has a matching Blocks link | Without links, teams start the wrong things first |
 | Every existing ticket shows its approved action: the comment, the new text, the link, or the new status | An action that only half applied leaves two tickets disagreeing |
-| The contract ticket, when there is one, is linked as a blocker on every story that uses it | Most commonly missed link |
+| Every contract ticket is linked as a blocker on every story that uses it | Most commonly missed link |
 | Stories with frontend work have all four checklist sections | Permissions, screen context, and a11y are the ones most often dropped |
 
 If anything is wrong, fix it directly via Jira before continuing.
